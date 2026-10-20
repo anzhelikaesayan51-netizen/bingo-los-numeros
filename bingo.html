@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bingo de números 0–100</title>
+<style>
+  * {
+    box-sizing: border-box;
+    font-family: "Segoe UI", Arial, sans-serif;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #4f8ef7, #7b5cf0);
+    color: #222;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .screen {
+    display: none;
+    width: 100%;
+    max-width: 760px;
+    background: white;
+    border-radius: 24px;
+    padding: 28px;
+    box-shadow: 0 18px 45px rgba(0,0,0,.25);
+  }
+
+  .screen.active {
+    display: block;
+  }
+
+  h1 {
+    text-align: center;
+    margin: 0 0 8px;
+    color: #2b3a67;
+  }
+
+  .subtitle {
+    text-align: center;
+    margin: 0 0 24px;
+    color: #666;
+  }
+
+  .player-buttons {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .big-button {
+    border: none;
+    border-radius: 18px;
+    padding: 24px 34px;
+    font-size: 24px;
+    font-weight: bold;
+    color: white;
+    cursor: pointer;
+    transition: transform .15s, box-shadow .15s;
+  }
+
+  .big-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(0,0,0,.2);
+  }
+
+  .player-a {
+    background: #ff6b6b;
+  }
+
+  .player-b {
+    background: #4ecdc4;
+  }
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+  }
+
+  .player-label {
+    font-size: 22px;
+    font-weight: bold;
+    padding: 10px 18px;
+    border-radius: 14px;
+    color: white;
+  }
+
+  .label-a {
+    background: #ff6b6b;
+  }
+
+  .label-b {
+    background: #4ecdc4;
+  }
+
+  .back {
+    background: #eee;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: bold;
+  }
+
+  .dice-area {
+    text-align: center;
+    background: #f4f6fb;
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+
+  .dice {
+    font-size: 52px;
+    font-weight: 900;
+    color: #2b3a67;
+    min-height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .roll {
+    margin-top: 12px;
+    background: #2b3a67;
+    color: white;
+    border: none;
+    padding: 14px 26px;
+    font-size: 18px;
+    font-weight: bold;
+    border-radius: 14px;
+    cursor: pointer;
+  }
+
+  .roll:disabled {
+    background: #aaa;
+    cursor: not-allowed;
+  }
+
+  .phrases {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 14px;
+  }
+
+  .phrase {
+    border: none;
+    padding: 12px 18px;
+    border-radius: 14px;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  .yes {
+    background: #d1f7d6;
+    color: #1c7c31;
+  }
+
+  .no {
+    background: #ffe0e0;
+    color: #b02a37;
+  }
+
+  .bingo-card {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+
+  .cell {
+    position: relative;
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(20px, 5vw, 32px);
+    font-weight: bold;
+    background: #eef3ff;
+    border: 3px solid #c9d8ff;
+    border-radius: 16px;
+    cursor: pointer;
+    user-select: none;
+    transition: background .2s, transform .1s;
+  }
+
+  .cell:hover {
+    transform: scale(1.03);
+  }
+
+  .cell.marked {
+    background: #ffd166;
+    border-color: #f4a300;
+    color: #7a4b00;
+  }
+
+  .cell.marked::after {
+    content: "✔";
+    position: absolute;
+    font-size: 40px;
+    color: rgba(0,0,0,.25);
+  }
+
+  .message {
+    text-align: center;
+    font-size: 20px;
+    font-weight: bold;
+    min-height: 30px;
+    margin-top: 16px;
+    color: #2b3a67;
+  }
+
+  .win {
+    text-align: center;
+    background: #fff3cd;
+    border: 3px dashed #ffb703;
+    border-radius: 20px;
+    padding: 30px;
+  }
+
+  .win h2 {
+    color: #b35c00;
+    margin: 0 0 10px;
+  }
+
+  .restart {
+    margin-top: 16px;
+    background: #2b3a67;
+    color: white;
+    border: none;
+    padding: 14px 24px;
+    border-radius: 14px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  .instructions {
+    background: #f7f9ff;
+    border-left: 6px solid #4f8ef7;
+    padding: 14px 18px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    font-size: 16px;
+  }
+
+  @media (max-width: 520px) {
+    .screen {
+      padding: 18px;
+    }
+
+    .big-button {
+      width: 100%;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- PANTALLA INICIAL -->
+<div id="startScreen" class="screen active">
+  <h1>🎲 Bingo de números</h1>
+  <p class="subtitle">Números del 0 al 100 · Para dos alumnos</p>
+
+  <div class="instructions">
+    <strong>Cómo jugar:</strong><br>
+    1. Cada alumno entra en su campo.<br>
+    2. Por turnos, un alumno tira el dado y dice el número en español.<br>
+    3. El compañero responde: <strong>“¡Lo tengo!”</strong> o <strong>“No lo tengo.”</strong><br>
+    4. Si tiene el número, lo marca en su tarjeta.<br>
+    5. Gana quien haga una línea de 4: horizontal, vertical o diagonal.<br><br>
+    <strong>Importante:</strong> los números del dado no se repiten durante la partida.
+  </div>
+
+  <div class="player-buttons">
+    <button class="big-button player-a" onclick="enterGame('A')">Alumno A</button>
+    <button class="big-button player-b" onclick="enterGame('B')">Alumno B</button>
+  </div>
+</div>
+
+<!-- PANTALLA ALUMNO A -->
+<div id="screenA" class="screen">
+  <div class="header">
+    <div class="player-label label-a">Alumno A</div>
+    <button class="back" onclick="goHome()">← Salir</button>
+  </div>
+
+  <div class="dice-area">
+    <div class="dice" id="diceA">?</div>
+    <button class="roll" id="rollA" onclick="rollDice('A')">🎲 Tirar el dado</button>
+
+    <div class="phrases">
+      <button class="phrase yes" onclick="say('A', '¡Lo tengo!')">¡Lo tengo!</button>
+      <button class="phrase no" onclick="say('A', 'No lo tengo.')">No lo tengo.</button>
+    </div>
+  </div>
+
+  <div class="bingo-card" id="cardA"></div>
+  <div class="message" id="messageA"></div>
+</div>
+
+<!-- PANTALLA ALUMNO B -->
+<div id="screenB" class="screen">
+  <div class="header">
+    <div class="player-label label-b">Alumno B</div>
+    <button class="back" onclick="goHome()">← Salir</button>
+  </div>
+
+  <div class="dice-area">
+    <div class="dice" id="diceB">?</div>
+    <button class="roll" id="rollB" onclick="rollDice('B')">🎲 Tirar el dado</button>
+
+    <div class="phrases">
+      <button class="phrase yes" onclick="say('B', '¡Lo tengo!')">¡Lo tengo!</button>
+      <button class="phrase no" onclick="say('B', 'No lo tengo.')">No lo tengo.</button>
+    </div>
+  </div>
+
+  <div class="bingo-card" id="cardB"></div>
+  <div class="message" id="messageB"></div>
+</div>
+
+<!-- PANTALLA GANADOR -->
+<div id="winScreen" class="screen">
+  <div class="win">
+    <h2>🎉 ¡BINGO!</h2>
+    <p id="winnerText"></p>
+    <button class="restart" onclick="restartGame()">Jugar otra vez</button>
+  </div>
+</div>
+
+<script>
+  let cards = {
+    A: [],
+    B: []
+  };
+
+  let availableNumbers = {
+    A: [],
+    B: []
+  };
+
+  function shuffle(array) {
+    return array.sort(() => Math.random() - 0.5);
+  }
+
+  function enterGame(player) {
+    const allNumbers = [];
+
+    for (let i = 0; i <= 100; i++) {
+      allNumbers.push(i);
+    }
+
+    availableNumbers[player] = shuffle(allNumbers);
+    cards[player] = availableNumbers[player].slice(0, 16);
+
+    document.getElementById("startScreen").classList.remove("active");
+    document.getElementById("screen" + player).classList.add("active");
+
+    createCard(player);
+
+    document.getElementById("message" + player).textContent = "";
+    document.getElementById("dice" + player).textContent = "?";
+    document.getElementById("roll" + player).disabled = false;
+  }
+
+  function createCard(player) {
+    const card = document.getElementById("card" + player);
+    card.innerHTML = "";
+
+    cards[player].forEach(number => {
+      const cell = document.createElement("div");
+      cell.className = "cell";
+      cell.textContent = number;
+      cell.dataset.number = number;
+
+      cell.addEventListener("click", function () {
+        if (this.classList.contains("marked")) {
+          this.classList.remove("marked");
+        } else {
+          this.classList.add("marked");
+          checkBingo(player);
+        }
+      });
+
+      card.appendChild(cell);
+    });
+  }
+
+  function rollDice(player) {
+    const dice = document.getElementById("dice" + player);
+    const button = document.getElementById("roll" + player);
+
+    if (availableNumbers[player].length === 0) {
+      dice.textContent = "—";
+      document.getElementById("message" + player).textContent =
+        "Ya salieron todos los números. ¡Jueguen otra partida!";
+      button.disabled = true;
+      return;
+    }
+
+    button.disabled = true;
+    dice.textContent = "...";
+
+    let count = 0;
+
+    const interval = setInterval(() => {
+      dice.textContent = Math.floor(Math.random() * 101);
+      count++;
+
+      if (count > 12) {
+        clearInterval(interval);
+
+        const index = Math.floor(Math.random() * availableNumbers[player].length);
+        const finalNumber = availableNumbers[player][index];
+
+        availableNumbers[player].splice(index, 1);
+
+        dice.textContent = finalNumber;
+        document.getElementById("message" + player).textContent =
+          "Di el número a tu compañero: " + finalNumber;
+
+        button.disabled = false;
+      }
+    }, 80);
+  }
+
+  function say(player, phrase) {
+    document.getElementById("message" + player).textContent = phrase;
+  }
+
+  function checkBingo(player) {
+    const cells = Array.from(document.querySelectorAll("#card" + player + " .cell"));
+    const marked = cells.map(cell => cell.classList.contains("marked"));
+
+    const lines = [
+      [0,1,2,3], [4,5,6,7], [8,9,10,11], [12,13,14,15],
+      [0,4,8,12], [1,5,9,13], [2,6,10,14], [3,7,11,15],
+      [0,5,10,15], [3,6,9,12]
+    ];
+
+    const hasBingo = lines.some(line =>
+      line.every(index => marked[index])
+    );
+
+    if (hasBingo) {
+      document.getElementById("winnerText").textContent =
+        "¡Enhorabuena, Alumno " + player + "! Has hecho una línea de cuatro números.";
+
+      document.getElementById("screen" + player).classList.remove("active");
+      document.getElementById("winScreen").classList.add("active");
+    }
+  }
+
+  function goHome() {
+    document.querySelectorAll(".screen").forEach(screen => {
+      screen.classList.remove("active");
+    });
+
+    document.getElementById("startScreen").classList.add("active");
+  }
+
+  function restartGame() {
+    document.querySelectorAll(".screen").forEach(screen => {
+      screen.classList.remove("active");
+    });
+
+    document.getElementById("startScreen").classList.add("active");
+  }
+</script>
+
+</body>
+</html>
